@@ -1,82 +1,41 @@
-const DB_NAME = 'CardapioDB';
-const DB_VERSION = 1;
-const STORE_DRINKS = 'drinks';
-
-function openDB() {
-    return new Promise((resolve, reject) => {
-        const request = indexedDB.open(DB_NAME, DB_VERSION);
-
-        request.onupgradeneeded = (event) => {
-            const db = event.target.result;
-            if (!db.objectStoreNames.contains(STORE_DRINKS)) {
-                db.createObjectStore(STORE_DRINKS, { keyPath: 'id', autoIncrement: true });
-            }
-        };
-
-        request.onsuccess = (event) => {
-            resolve(event.target.result);
-        };
-
-        request.onerror = (event) => {
-            reject('Error opening DB: ' + event.target.error);
-        };
-    });
-}
-
+// Camada de acesso a dados via API REST (backend SQLite compartilhado)
 const dbOperations = {
     async addDrink(drink) {
-        const db = await openDB();
-        return new Promise((resolve, reject) => {
-            const transaction = db.transaction([STORE_DRINKS], 'readwrite');
-            const store = transaction.objectStore(STORE_DRINKS);
-            const request = store.add(drink);
-            request.onsuccess = () => resolve(request.result);
-            request.onerror = () => reject(request.error);
+        const res = await fetch('/api/drinks', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(drink)
         });
+        if (!res.ok) throw new Error('Erro ao adicionar drink');
+        return (await res.json()).id;
     },
 
     async getAllDrinks() {
-        const db = await openDB();
-        return new Promise((resolve, reject) => {
-            const transaction = db.transaction([STORE_DRINKS], 'readonly');
-            const store = transaction.objectStore(STORE_DRINKS);
-            const request = store.getAll();
-            request.onsuccess = () => resolve(request.result);
-            request.onerror = () => reject(request.error);
-        });
+        const res = await fetch('/api/drinks');
+        if (!res.ok) throw new Error('Erro ao buscar drinks');
+        return res.json();
     },
 
     async updateDrink(drink) {
-        const db = await openDB();
-        return new Promise((resolve, reject) => {
-            const transaction = db.transaction([STORE_DRINKS], 'readwrite');
-            const store = transaction.objectStore(STORE_DRINKS);
-            const request = store.put(drink);
-            request.onsuccess = () => resolve(request.result);
-            request.onerror = () => reject(request.error);
+        const res = await fetch(`/api/drinks/${drink.id}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(drink)
         });
+        if (!res.ok) throw new Error('Erro ao atualizar drink');
+        return res.json();
     },
 
     async deleteDrink(id) {
-        const db = await openDB();
-        return new Promise((resolve, reject) => {
-            const transaction = db.transaction([STORE_DRINKS], 'readwrite');
-            const store = transaction.objectStore(STORE_DRINKS);
-            const request = store.delete(id);
-            request.onsuccess = () => resolve(request.result);
-            request.onerror = () => reject(request.error);
-        });
+        const res = await fetch(`/api/drinks/${id}`, { method: 'DELETE' });
+        if (!res.ok) throw new Error('Erro ao excluir drink');
+        return res.json();
     },
 
     async getDrinkById(id) {
-        const db = await openDB();
-        return new Promise((resolve, reject) => {
-            const transaction = db.transaction([STORE_DRINKS], 'readonly');
-            const store = transaction.objectStore(STORE_DRINKS);
-            const request = store.get(id);
-            request.onsuccess = () => resolve(request.result);
-            request.onerror = () => reject(request.error);
-        });
+        const res = await fetch(`/api/drinks/${id}`);
+        if (!res.ok) return null;
+        return res.json();
     }
 };
 

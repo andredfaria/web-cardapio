@@ -23,6 +23,9 @@ Thumbs.db
 .idea/
 *.swp
 
+# Banco de dados local
+db.json
+
 # AIOX Local (AIOX)
 .aiox-core/local/
 .claude/settings.local.json
