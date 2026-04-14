@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin - Barraquinha de Drinks</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <div class="container">
+        <h1>Painel Admin</h1>
+        
+        <div id="admin-form" class="admin-panel">
+            <h2 id="form-title">Cadastrar Drink</h2>
+            <form id="drink-form">
+                <input type="hidden" id="drink-id">
+                <div class="form-group">
+                    <label for="nome">Nome do Drink</label>
+                    <input type="text" id="nome" required placeholder="Ex: Caipirinha de Morango">
+                </div>
+                <div class="form-group">
+                    <label for="preco">Preço (R$)</label>
+                    <input type="number" id="preco" step="0.01" required placeholder="Ex: 15.00">
+                </div>
+                <button type="submit" id="submit-btn" class="btn-primary">Adicionar</button>
+                <button type="button" id="cancel-btn" class="btn-danger" style="display:none; margin-top: 10px; width: 100%;">Cancelar Edição</button>
+            </form>
+        </div>
+
+        <div class="admin-list">
+            <h2>Drinks Cadastrados</h2>
+            <div id="drinks-list">
+                <!-- Drinks will be rendered here -->
+            </div>
+        </div>
+        
+        <div style="margin-top: 30px; text-align: center;">
+            <a href="index.html">Ver Visão Cliente</a>
+        </div>
+    </div>
+
+    <script src="js/db.js"></script>
+    <script src="js/admin.js"></script>
+</body>
+</html>

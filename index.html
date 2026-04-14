@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Barraquinha de Drinks - Ubatuba</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="manifest" href="manifest.json">
+</head>
+<body>
+    <div class="container">
+        <!-- TELA 1: LISTAR DRINKS -->
+        <div id="view-menu" class="view active">
+            <h1>Drinks Disponíveis</h1>
+            <div id="client-drinks-list">
+                <!-- Drinks will be rendered here -->
+            </div>
+            
+            <div id="view-order-btn" class="floating-btn" onclick="showView('view-summary')">
+                Ver Meu Pedido (<span id="cart-count">0</span>)
+            </div>
+        </div>
+
+        <!-- TELA 3: RESUMO DO PEDIDO -->
+        <div id="view-summary" class="view">
+            <h1>Seu Pedido</h1>
+            <div id="order-items-list">
+                <!-- Selected items will be rendered here -->
+            </div>
+            <div style="margin-top: 20px; text-align: right; font-size: 1.2rem; font-weight: bold;">
+                Total: R$ <span id="order-total">0.00</span>
+            </div>
+            <div style="display: flex; gap: 10px; margin-top: 30px;">
+                <button class="btn-primary" onclick="showView('view-menu')" style="background-color: #666;">Adicionar Mais</button>
+                <button class="btn-accent" onclick="finalizeOrder()" style="flex-grow: 1;">Finalizar Pedido</button>
+            </div>
+        </div>
+
+        <!-- TELA 4: CONFIRMAÇÃO COM PIX -->
+        <div id="view-confirmation" class="view">
+            <h1 style="color: #28a745;">✅ Pedido Confirmado!</h1>
+            <p style="text-align: center;">Seu pedido foi registrado e será preparado em breve.</p>
+            
+            <div style="margin: 30px 0; text-align: center;">
+                <p>Total a Pagar:</p>
+                <h2 style="font-size: 2rem;">R$ <span id="final-total">0.00</span></h2>
+            </div>
+
+            <div class="pix-section" style="text-align: center;">
+                <p><strong>Pague via PIX</strong></p>
+                <div id="pix-key" class="pix-box">123.456.789-10</div>
+                <button class="btn-primary btn-small" onclick="copyPixKey()">Copiar Chave PIX</button>
+                <p id="copy-feedback" style="font-size: 12px; color: #28a745; margin-top: 5px; display: none;">Chave copiada!</p>
+            </div>
+
+            <div style="margin-top: 40px; text-align: center;">
+                <p style="font-style: italic; color: #666;">Obrigado! Seu drink será preparado após a confirmação do pagamento.</p>
+                <button class="btn-primary" onclick="newOrder()" style="margin-top: 20px;">Fazer Novo Pedido</button>
+            </div>
+        </div>
+
+        <!-- MODAL DE SELEÇÃO (TELA 2) -->
+        <div id="selection-modal" class="modal">
+            <div class="modal-content">
+                <h2 id="modal-drink-name">Nome do Drink</h2>
+                <p id="modal-drink-price">R$ 0.00</p>
+                
+                <div class="qty-control">
+                    <button class="qty-btn" onclick="updateQty(-1)">-</button>
+                    <span id="modal-qty" style="font-size: 1.5rem; font-weight: bold;">1</span>
+                    <button class="qty-btn" onclick="updateQty(1)">+</button>
+                </div>
+                
+                <div style="display: flex; gap: 10px; margin-top: 20px;">
+                    <button class="btn-primary btn-accent" onclick="addToCart()" style="flex-grow: 1;">Adicionar ao Pedido</button>
+                    <button class="btn-danger btn-small" onclick="closeModal()">Voltar</button>
+                </div>
+            </div>
+        </div>
+        
+        <div style="margin-top: 30px; text-align: center;">
+            <a href="admin.html" style="color: #999; font-size: 12px; text-decoration: none;">Acesso Admin</a>
+        </div>
+    </div>
+
+    <script src="js/db.js"></script>
+    <script src="js/client.js"></script>
+    <script>
+        // Register Service Worker
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('sw.js')
+                .then(() => console.log('Service Worker Registered'));
+        }
+    </script>
+</body>
+</html>
