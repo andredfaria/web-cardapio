@@ -30,3 +30,6 @@ db.json
 .aiox-core/local/
 .claude/settings.local.json
 .aiox/install-log.txt
+
+# SQLite local
+/data
