@@ -1,0 +1,8 @@
+node_modules
+data
+db.json
+.env
+.env.*
+.git
+.gitignore
+docs
