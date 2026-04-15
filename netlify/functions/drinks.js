@@ -16,16 +16,28 @@ async function getDB(store) {
     return data || { drinks: [], nextId: 1 };
 }
 
+// Extrai o ID do caminho original da requisição.
+// event.path após um redirect aponta para /.netlify/functions/drinks,
+// mas event.rawUrl preserva a URL que o browser realmente pediu.
+function extractId(event) {
+    let pathname = '';
+    try {
+        pathname = new URL(event.rawUrl).pathname;
+    } catch {
+        pathname = event.path || '';
+    }
+    const match = pathname.match(/\/api\/drinks\/(\d+)/);
+    return match ? parseInt(match[1]) : null;
+}
+
 exports.handler = async (event) => {
     if (event.httpMethod === 'OPTIONS') {
         return { statusCode: 200, headers: HEADERS, body: '' };
     }
 
-    const store = getStore({ name: 'cardapio', consistency: 'strong' });
-
-    // Extrai o ID do path: /api/drinks/5 → id = 5
-    const match = (event.path || '').match(/\/api\/drinks\/(\d+)/);
-    const id = match ? parseInt(match[1]) : null;
+    // getStore sem opções extras — funciona em todos os planos Netlify
+    const store = getStore('cardapio');
+    const id = extractId(event);
 
     try {
         switch (event.httpMethod) {
@@ -50,7 +62,7 @@ exports.handler = async (event) => {
             }
 
             case 'PUT': {
-                if (!id) return json(400, { error: 'ID obrigatório' });
+                if (id === null) return json(400, { error: 'ID obrigatório' });
                 const { nome, preco } = JSON.parse(event.body || '{}');
                 if (!nome || preco == null) return json(400, { error: 'nome e preco são obrigatórios' });
                 const db = await getDB(store);
@@ -62,7 +74,7 @@ exports.handler = async (event) => {
             }
 
             case 'DELETE': {
-                if (!id) return json(400, { error: 'ID obrigatório' });
+                if (id === null) return json(400, { error: 'ID obrigatório' });
                 const db = await getDB(store);
                 const idx = db.drinks.findIndex(d => d.id === id);
                 if (idx === -1) return json(404, { error: 'Drink não encontrado' });
@@ -76,6 +88,6 @@ exports.handler = async (event) => {
         }
     } catch (err) {
         console.error('Erro na função drinks:', err);
-        return json(500, { error: 'Erro interno do servidor' });
+        return json(500, { error: err.message || 'Erro interno do servidor' });
     }
 };

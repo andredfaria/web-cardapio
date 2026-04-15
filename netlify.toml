@@ -2,14 +2,15 @@
   publish = "."
   functions = "netlify/functions"
 
-# Redireciona /api/drinks/:id → função drinks
+[functions]
+  node_bundler = "esbuild"
+
 [[redirects]]
   from = "/api/drinks/*"
   to = "/.netlify/functions/drinks"
   status = 200
   force = true
 
-# Redireciona /api/drinks → função drinks
 [[redirects]]
   from = "/api/drinks"
   to = "/.netlify/functions/drinks"
