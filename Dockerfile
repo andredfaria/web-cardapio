@@ -1,7 +1,7 @@
 FROM node:20-alpine
 
 # better-sqlite3 compila um addon nativo em C++ — requer essas ferramentas
-RUN apk add --no-cache python3 make g++
+RUN apk add --no-cache python3 make build-base
 
 WORKDIR /app
 

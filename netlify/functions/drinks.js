@@ -1,4 +1,5 @@
-const { getStore } = require('@netlify/blobs');
+const SUPABASE_URL = process.env.SUPABASE_URL;
+const SUPABASE_KEY = process.env.SUPABASE_ANON_KEY;
 
 const HEADERS = {
     'Content-Type': 'application/json',
@@ -11,14 +12,31 @@ function json(statusCode, body) {
     return { statusCode, headers: HEADERS, body: JSON.stringify(body) };
 }
 
-async function getDB(store) {
-    const data = await store.get('drinks-db', { type: 'json' });
-    return data || { drinks: [], nextId: 1 };
+// Chamada genérica para a API REST do Supabase
+async function db(path, { method = 'GET', body, prefer } = {}) {
+    const headers = {
+        'apikey': SUPABASE_KEY,
+        'Authorization': `Bearer ${SUPABASE_KEY}`,
+        'Content-Type': 'application/json',
+    };
+    if (prefer) headers['Prefer'] = prefer;
+
+    const res = await fetch(`${SUPABASE_URL}/rest/v1${path}`, {
+        method,
+        headers,
+        body: body ? JSON.stringify(body) : undefined,
+    });
+
+    const text = await res.text();
+    const data = text ? JSON.parse(text) : null;
+
+    if (!res.ok) {
+        throw new Error(data?.message || `Supabase error ${res.status}`);
+    }
+    return data;
 }
 
-// Extrai o ID do caminho original da requisição.
-// event.path após um redirect aponta para /.netlify/functions/drinks,
-// mas event.rawUrl preserva a URL que o browser realmente pediu.
+// Extrai o ID do caminho original (event.rawUrl preserva a URL do browser)
 function extractId(event) {
     let pathname = '';
     try {
@@ -35,51 +53,51 @@ exports.handler = async (event) => {
         return { statusCode: 200, headers: HEADERS, body: '' };
     }
 
-    // getStore sem opções extras — funciona em todos os planos Netlify
-    const store = getStore('cardapio');
+    if (!SUPABASE_URL || !SUPABASE_KEY) {
+        return json(500, { error: 'Variáveis SUPABASE_URL e SUPABASE_ANON_KEY não configuradas' });
+    }
+
     const id = extractId(event);
 
     try {
         switch (event.httpMethod) {
             case 'GET': {
-                const db = await getDB(store);
                 if (id !== null) {
-                    const drink = db.drinks.find(d => d.id === id);
-                    if (!drink) return json(404, { error: 'Drink não encontrado' });
-                    return json(200, drink);
+                    const rows = await db(`/drinks?id=eq.${id}&select=*`);
+                    if (!rows.length) return json(404, { error: 'Drink não encontrado' });
+                    return json(200, rows[0]);
                 }
-                return json(200, db.drinks);
+                const drinks = await db('/drinks?select=*&order=id');
+                return json(200, drinks);
             }
 
             case 'POST': {
                 const { nome, preco } = JSON.parse(event.body || '{}');
                 if (!nome || preco == null) return json(400, { error: 'nome e preco são obrigatórios' });
-                const db = await getDB(store);
-                const drink = { id: db.nextId++, nome, preco: parseFloat(preco) };
-                db.drinks.push(drink);
-                await store.setJSON('drinks-db', db);
-                return json(201, drink);
+                const rows = await db('/drinks', {
+                    method: 'POST',
+                    body: { nome, preco: parseFloat(preco) },
+                    prefer: 'return=representation',
+                });
+                return json(201, rows[0]);
             }
 
             case 'PUT': {
                 if (id === null) return json(400, { error: 'ID obrigatório' });
                 const { nome, preco } = JSON.parse(event.body || '{}');
                 if (!nome || preco == null) return json(400, { error: 'nome e preco são obrigatórios' });
-                const db = await getDB(store);
-                const idx = db.drinks.findIndex(d => d.id === id);
-                if (idx === -1) return json(404, { error: 'Drink não encontrado' });
-                db.drinks[idx] = { id, nome, preco: parseFloat(preco) };
-                await store.setJSON('drinks-db', db);
-                return json(200, db.drinks[idx]);
+                const rows = await db(`/drinks?id=eq.${id}`, {
+                    method: 'PATCH',
+                    body: { nome, preco: parseFloat(preco) },
+                    prefer: 'return=representation',
+                });
+                if (!rows.length) return json(404, { error: 'Drink não encontrado' });
+                return json(200, rows[0]);
             }
 
             case 'DELETE': {
                 if (id === null) return json(400, { error: 'ID obrigatório' });
-                const db = await getDB(store);
-                const idx = db.drinks.findIndex(d => d.id === id);
-                if (idx === -1) return json(404, { error: 'Drink não encontrado' });
-                db.drinks.splice(idx, 1);
-                await store.setJSON('drinks-db', db);
+                await db(`/drinks?id=eq.${id}`, { method: 'DELETE' });
                 return json(200, { ok: true });
             }
 
